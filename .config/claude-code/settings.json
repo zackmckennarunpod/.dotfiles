@@ -1,0 +1,6 @@
+{
+  "environment": {
+    "TEST_USER_JWT": "YOUR_TEST_USER_JWT_HERE",
+    "TEST_USER_ADMIN_JWT": "YOUR_TEST_USER_ADMIN_JWT_HERE"
+  }
+}
