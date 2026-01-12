@@ -24,6 +24,7 @@ This repo uses **symlinks** to keep your config files in sync:
 | `.p10k.zsh` | Powerlevel10k prompt theme |
 | `CLAUDE.md` | AI dev guidelines (TDD, TypeScript, FP) |
 | `karabiner.json` | Caps Lock → Ctrl (hold) / Escape (tap) |
+| `ghostty/config` | Ghostty terminal config |
 | `extras/runpod-helpers.sh` | Optional RunPod-specific aliases |
 | Beads | Git-backed issue tracker for AI agents (optional install) |
 
@@ -144,11 +145,10 @@ This gives you:
 ├── .config/
 │   ├── karabiner/
 │   │   └── karabiner.json    # Caps Lock remapping
-│   └── claude-code/
-│       └── settings.json     # Claude Code config
-├── extras/
-│   └── runpod-helpers.sh     # Optional RunPod aliases
-└── claude-desktop-config.json
+│   └── ghostty/
+│       └── config            # Ghostty terminal config
+└── extras/
+    └── runpod-helpers.sh     # Optional RunPod aliases
 ```
 
 ## Updating

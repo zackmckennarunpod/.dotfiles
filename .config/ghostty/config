@@ -1,0 +1,46 @@
+# Ghostty Configuration
+# https://ghostty.org/docs/config
+
+# Font - using Nerd Font for terminal icons
+font-family = "JetBrainsMono Nerd Font"
+font-size = 14
+
+# Fallback fonts for special characters
+font-family = "Symbols Nerd Font Mono"
+
+# Window appearance
+window-padding-x = 12
+window-padding-y = 12
+window-decoration = true
+
+# Theme
+theme = dark
+
+# Cursor
+cursor-style = block
+cursor-style-blink = false
+
+# Mouse
+mouse-hide-while-typing = true
+
+# Scrollback
+scrollback-limit = 10000
+
+# Shell integration
+shell-integration = zsh
+
+# Clipboard
+clipboard-read = allow
+clipboard-write = allow
+
+# Performance
+vsync = true
+
+# Keybindings
+# Note: Most navigation is handled by tmux
+# These are Ghostty-specific bindings
+keybind = super+t=new_tab
+keybind = super+w=close_surface
+keybind = super+shift+left_bracket=previous_tab
+keybind = super+shift+right_bracket=next_tab
+keybind = super+enter=toggle_fullscreen

@@ -71,26 +71,20 @@ if [[ -f "$DOTFILES_DIR/CLAUDE.md" ]]; then
     create_symlink "$DOTFILES_DIR/CLAUDE.md" "$HOME/.CLAUDE.md"
 fi
 
-section "Claude Configuration"
-CLAUDE_CODE_CONFIG_DIR="$HOME/.config/claude-code"
+# Note: Claude Code and Claude Desktop configs are not included
+# as they contain API keys. Configure those manually.
 
-if [[ ! -d "$CLAUDE_CODE_CONFIG_DIR" ]]; then
-    mkdir -p "$CLAUDE_CODE_CONFIG_DIR"
-    info "Created directory: $CLAUDE_CODE_CONFIG_DIR"
-fi
-
-if [[ -f "$DOTFILES_DIR/.config/claude-code/settings.json" ]]; then
-    create_symlink "$DOTFILES_DIR/.config/claude-code/settings.json" "$CLAUDE_CODE_CONFIG_DIR/settings.json"
-fi
-
-# Claude Desktop configuration (macOS only)
-CLAUDE_DESKTOP_CONFIG_DIR="$HOME/Library/Application Support/Claude"
-if [[ -d "$CLAUDE_DESKTOP_CONFIG_DIR" ]]; then
-    if [[ -f "$DOTFILES_DIR/claude-desktop-config.json" ]]; then
-        create_symlink "$DOTFILES_DIR/claude-desktop-config.json" "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json"
+section "Ghostty Terminal"
+GHOSTTY_CONFIG_DIR="$HOME/.config/ghostty"
+if [[ -d "/Applications/Ghostty.app" ]] || command -v ghostty &> /dev/null; then
+    mkdir -p "$GHOSTTY_CONFIG_DIR"
+    if [[ -f "$DOTFILES_DIR/.config/ghostty/config" ]]; then
+        create_symlink "$DOTFILES_DIR/.config/ghostty/config" "$GHOSTTY_CONFIG_DIR/config"
+        info "Ghostty configured with Nerd Font and dark theme"
     fi
 else
-    warn "Claude Desktop not installed, skipping config..."
+    warn "Ghostty not installed, skipping config..."
+    info "Install with: brew install --cask ghostty"
 fi
 
 section "Karabiner Elements (Caps Lock → Ctrl/Escape)"
