@@ -25,6 +25,7 @@ This repo uses **symlinks** to keep your config files in sync:
 | `CLAUDE.md` | AI dev guidelines (TDD, TypeScript, FP) |
 | `karabiner.json` | Caps Lock → Ctrl (hold) / Escape (tap) |
 | `extras/runpod-helpers.sh` | Optional RunPod-specific aliases |
+| Beads | Git-backed issue tracker for AI agents (optional install) |
 
 ## Quick Start
 
@@ -75,6 +76,19 @@ The install script optionally sets up [LazyVim](https://www.lazyvim.org/) - a mo
 - Zoxide for smart `cd` (`z myproject` jumps to ~/work/myproject)
 - Syntax highlighting
 - `nvimrepo` function to open repos in tmux+neovim
+
+### Beads (AI Agent Memory)
+[Beads](https://github.com/steveyegge/beads) is a git-backed issue tracker designed for AI coding agents:
+- **Persistent memory** across sessions (survives context window limits)
+- **Dependency tracking** between tasks
+- **Git-native** - issues stored in `.beads/` as JSONL
+
+```bash
+bd init              # Initialize in a git repo
+bd create "Add auth" # Create an issue
+bd ready             # List unblocked tasks
+bd show ABC123       # View issue details
+```
 
 ## Customization
 

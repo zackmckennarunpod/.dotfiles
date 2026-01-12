@@ -122,6 +122,32 @@ else
     info "Neovim config already exists at $NVIM_CONFIG_DIR"
 fi
 
+section "Beads (AI Agent Memory System)"
+if command -v bd &> /dev/null; then
+    info "Beads already installed: $(bd --version 2>/dev/null || echo 'installed')"
+else
+    read -p "Install Beads (git-backed issue tracker for AI agents)? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if command -v brew &> /dev/null; then
+            info "Installing Beads via Homebrew..."
+            brew install steveyegge/beads/bd
+        elif command -v npm &> /dev/null; then
+            info "Installing Beads via npm..."
+            npm install -g @beads/bd
+        elif command -v go &> /dev/null; then
+            info "Installing Beads via Go..."
+            go install github.com/steveyegge/beads/cmd/bd@latest
+        else
+            info "Installing Beads via shell script..."
+            curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+        fi
+        info "Beads installed! Run 'bd init' in a git repo to get started."
+    else
+        info "Skipping Beads"
+    fi
+fi
+
 section "Local Override Files"
 if [[ ! -f "$HOME/.zshrc.local" ]]; then
     cat > "$HOME/.zshrc.local" << 'EOF'
