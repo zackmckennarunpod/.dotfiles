@@ -1,18 +1,38 @@
-[user]
-	name = Zachary McKenna
-	email = zack.mckenna@runpod.io
+# Git Configuration
+# After installing, run:
+#   git config --global user.name "Your Name"
+#   git config --global user.email "your.email@example.com"
+
 [color]
 	ui = auto
+
+[core]
+	excludesfile = ~/.gitignore_global
+	editor = nvim
+
+[init]
+	defaultBranch = main
+
+[pull]
+	rebase = false
+
+[push]
+	autoSetupRemote = true
+
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
 [credential "https://github.com"]
-	helper = 
+	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
+
 [credential "https://gist.github.com"]
-	helper = 
+	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
-[core]
-	excludesfile = /Users/zackmckenna/.gitignore_global
+
+# Include local overrides (create ~/.gitconfig.local for personal settings)
+[include]
+	path = ~/.gitconfig.local

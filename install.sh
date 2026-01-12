@@ -1,96 +1,174 @@
 #!/bin/bash
 
 # Dotfiles installation script
-# This script creates symlinks from your home directory to the dotfiles in this repo
+# Creates symlinks from home directory to dotfiles in this repo
+# Backs up existing files before overwriting
 
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Files to symlink
-FILES=(
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; }
+section() { echo -e "\n${BLUE}=== $1 ===${NC}\n"; }
+
+# Dotfiles to symlink (without leading dot - will be added)
+DOTFILES=(
     "zshrc"
     "tmux.conf"
     "gitconfig"
     "gitignore_global"
     "p10k.zsh"
-    "CLAUDE.md"
 )
 
-# Claude config files with special handling
-CLAUDE_CODE_CONFIG_DIR="$HOME/.config/claude-code"
-CLAUDE_DESKTOP_CONFIG_DIR="$HOME/Library/Application Support/Claude"
+# Create symlink with backup
+create_symlink() {
+    local source="$1"
+    local target="$2"
 
-echo "Creating symlinks..."
+    # Backup existing file if it exists and isn't a symlink
+    if [[ -f "$target" ]] && [[ ! -L "$target" ]]; then
+        warn "Backing up existing $target to ${target}.backup"
+        mv "$target" "${target}.backup"
+    fi
 
-for file in "${FILES[@]}"; do
-    if [ -f "$DOTFILES_DIR/$file" ]; then
-        # Backup existing file if it exists
-        if [ -f "$HOME/.$file" ] && [ ! -L "$HOME/.$file" ]; then
-            echo "Backing up existing ~/.$file to ~/.$file.backup"
-            mv "$HOME/.$file" "$HOME/.$file.backup"
-        fi
-        
-        # Remove existing symlink if it exists
-        if [ -L "$HOME/.$file" ]; then
-            rm "$HOME/.$file"
-        fi
-        
-        # Create new symlink
-        ln -s "$DOTFILES_DIR/$file" "$HOME/.$file"
-        echo "Created symlink: ~/.$file -> $DOTFILES_DIR/$file"
+    # Remove existing symlink
+    if [[ -L "$target" ]]; then
+        rm "$target"
+    fi
+
+    # Create new symlink
+    ln -s "$source" "$target"
+    info "Created symlink: $target -> $source"
+}
+
+echo "========================================="
+echo "  Dotfiles Installation"
+echo "========================================="
+
+section "Core Dotfiles"
+for file in "${DOTFILES[@]}"; do
+    source_file="$DOTFILES_DIR/.$file"
+    target_file="$HOME/.$file"
+
+    if [[ -f "$source_file" ]]; then
+        create_symlink "$source_file" "$target_file"
     else
-        echo "Warning: $DOTFILES_DIR/$file not found, skipping..."
+        warn "Source file not found: $source_file, skipping..."
     fi
 done
 
-# Handle Claude config files
-echo "Setting up Claude configuration files..."
+# Install CLAUDE.md
+if [[ -f "$DOTFILES_DIR/CLAUDE.md" ]]; then
+    create_symlink "$DOTFILES_DIR/CLAUDE.md" "$HOME/.CLAUDE.md"
+fi
 
-# Create Claude Code config directory if it doesn't exist
-if [ ! -d "$CLAUDE_CODE_CONFIG_DIR" ]; then
+section "Claude Configuration"
+CLAUDE_CODE_CONFIG_DIR="$HOME/.config/claude-code"
+
+if [[ ! -d "$CLAUDE_CODE_CONFIG_DIR" ]]; then
     mkdir -p "$CLAUDE_CODE_CONFIG_DIR"
-    echo "Created directory: $CLAUDE_CODE_CONFIG_DIR"
+    info "Created directory: $CLAUDE_CODE_CONFIG_DIR"
 fi
 
-# Symlink Claude Code settings
-if [ -f "$DOTFILES_DIR/.config/claude-code/settings.json" ]; then
-    if [ -f "$CLAUDE_CODE_CONFIG_DIR/settings.json" ] && [ ! -L "$CLAUDE_CODE_CONFIG_DIR/settings.json" ]; then
-        echo "Backing up existing Claude Code settings to $CLAUDE_CODE_CONFIG_DIR/settings.json.backup"
-        mv "$CLAUDE_CODE_CONFIG_DIR/settings.json" "$CLAUDE_CODE_CONFIG_DIR/settings.json.backup"
-    fi
-    
-    if [ -L "$CLAUDE_CODE_CONFIG_DIR/settings.json" ]; then
-        rm "$CLAUDE_CODE_CONFIG_DIR/settings.json"
-    fi
-    
-    ln -s "$DOTFILES_DIR/.config/claude-code/settings.json" "$CLAUDE_CODE_CONFIG_DIR/settings.json"
-    echo "Created symlink: $CLAUDE_CODE_CONFIG_DIR/settings.json -> $DOTFILES_DIR/.config/claude-code/settings.json"
+if [[ -f "$DOTFILES_DIR/.config/claude-code/settings.json" ]]; then
+    create_symlink "$DOTFILES_DIR/.config/claude-code/settings.json" "$CLAUDE_CODE_CONFIG_DIR/settings.json"
 fi
 
-# Symlink Claude Desktop config
-if [ -f "$DOTFILES_DIR/claude-desktop-config.json" ]; then
-    if [ ! -d "$CLAUDE_DESKTOP_CONFIG_DIR" ]; then
-        echo "Warning: Claude Desktop config directory not found at $CLAUDE_DESKTOP_CONFIG_DIR"
-        echo "You may need to install Claude Desktop first."
+# Claude Desktop configuration (macOS only)
+CLAUDE_DESKTOP_CONFIG_DIR="$HOME/Library/Application Support/Claude"
+if [[ -d "$CLAUDE_DESKTOP_CONFIG_DIR" ]]; then
+    if [[ -f "$DOTFILES_DIR/claude-desktop-config.json" ]]; then
+        create_symlink "$DOTFILES_DIR/claude-desktop-config.json" "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json"
+    fi
+else
+    warn "Claude Desktop not installed, skipping config..."
+fi
+
+section "Karabiner Elements (Caps Lock → Ctrl/Escape)"
+KARABINER_CONFIG_DIR="$HOME/.config/karabiner"
+if [[ -d "$KARABINER_CONFIG_DIR" ]] || command -v karabiner_cli &> /dev/null; then
+    mkdir -p "$KARABINER_CONFIG_DIR"
+    if [[ -f "$DOTFILES_DIR/.config/karabiner/karabiner.json" ]]; then
+        create_symlink "$DOTFILES_DIR/.config/karabiner/karabiner.json" "$KARABINER_CONFIG_DIR/karabiner.json"
+        info "Karabiner: Caps Lock = Ctrl (hold) / Escape (tap)"
+    fi
+else
+    warn "Karabiner Elements not installed, skipping..."
+    info "Install with: brew install --cask karabiner-elements"
+fi
+
+section "Neovim (LazyVim)"
+NVIM_CONFIG_DIR="$HOME/.config/nvim"
+if [[ ! -d "$NVIM_CONFIG_DIR" ]]; then
+    read -p "Install LazyVim starter config? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        git clone https://github.com/LazyVim/starter "$NVIM_CONFIG_DIR"
+        rm -rf "$NVIM_CONFIG_DIR/.git"
+        info "LazyVim installed! Open nvim to complete setup."
     else
-        if [ -f "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json" ] && [ ! -L "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json" ]; then
-            echo "Backing up existing Claude Desktop config to $CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json.backup"
-            mv "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json" "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json.backup"
-        fi
-        
-        if [ -L "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json" ]; then
-            rm "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json"
-        fi
-        
-        ln -s "$DOTFILES_DIR/claude-desktop-config.json" "$CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json"
-        echo "Created symlink: $CLAUDE_DESKTOP_CONFIG_DIR/claude_desktop_config.json -> $DOTFILES_DIR/claude-desktop-config.json"
+        info "Skipping Neovim config"
     fi
+else
+    info "Neovim config already exists at $NVIM_CONFIG_DIR"
 fi
 
-echo "Dotfiles installation complete!"
-echo "You may need to restart your terminal or run 'source ~/.zshrc' to apply changes."
+section "Local Override Files"
+if [[ ! -f "$HOME/.zshrc.local" ]]; then
+    cat > "$HOME/.zshrc.local" << 'EOF'
+# Personal/work-specific zsh configuration
+# This file is sourced at the end of .zshrc
+# Add your custom aliases, functions, and environment variables here
+
+# Example:
+# export REPO_BASE_DIR="$HOME/work/repos"
+# alias myproject="cd ~/work/myproject"
+
+# RunPod developers: uncomment to load helpers
+# source ~/.dotfiles/extras/runpod-helpers.sh
+EOF
+    info "Created ~/.zshrc.local (add your personal config here)"
+else
+    info "~/.zshrc.local already exists"
+fi
+
+if [[ ! -f "$HOME/.gitconfig.local" ]]; then
+    cat > "$HOME/.gitconfig.local" << 'EOF'
+# Personal git configuration
+# This file is included at the end of .gitconfig
+
+[user]
+    name = Your Name
+    email = your.email@example.com
+
+# Add any personal git settings here
+EOF
+    info "Created ~/.gitconfig.local (update with your name and email)"
+else
+    info "~/.gitconfig.local already exists"
+fi
+
 echo ""
-echo "IMPORTANT: Remember to update the Claude config files with your actual API keys:"
-echo "  - ~/.config/claude-code/settings.json"
-echo "  - ~/Library/Application Support/Claude/claude_desktop_config.json"
+echo "========================================="
+echo "  Installation Complete!"
+echo "========================================="
+echo ""
+info "Next steps:"
+echo "  1. Edit ~/.gitconfig.local with your name and email"
+echo "  2. Edit ~/.zshrc.local for personal aliases/config"
+echo "  3. Restart your terminal or run: source ~/.zshrc"
+echo ""
+info "Optional:"
+echo "  - Update Claude config with API keys"
+echo "  - Install Karabiner Elements for Caps Lock remapping"
+echo "  - Customize your Neovim setup"
+echo ""
