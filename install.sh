@@ -87,13 +87,14 @@ else
     info "Install with: brew install --cask ghostty"
 fi
 
-section "Karabiner Elements (Caps Lock → Ctrl/Escape)"
+section "Karabiner Elements (Caps Lock → Ctrl/Escape + tmux shortcut)"
 KARABINER_CONFIG_DIR="$HOME/.config/karabiner"
 if [[ -d "$KARABINER_CONFIG_DIR" ]] || command -v karabiner_cli &> /dev/null; then
     mkdir -p "$KARABINER_CONFIG_DIR"
     if [[ -f "$DOTFILES_DIR/.config/karabiner/karabiner.json" ]]; then
         create_symlink "$DOTFILES_DIR/.config/karabiner/karabiner.json" "$KARABINER_CONFIG_DIR/karabiner.json"
         info "Karabiner: Caps Lock = Ctrl (hold) / Escape (tap)"
+        info "Karabiner: Caps+A = Ctrl+B (tmux prefix shortcut)"
     fi
 else
     warn "Karabiner Elements not installed, skipping..."
