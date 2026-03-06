@@ -63,7 +63,10 @@ rp-pods() {
 rp-ssh() {
     local pod_id="$1"
     [[ -z "$pod_id" ]] && { echo "Usage: rp-ssh <pod_id>"; return 1; }
-    ssh "root@${pod_id}.runpod.io"
+    # Runpod SSH goes through the TCP proxy — port 22 maps to the SSH proxy endpoint.
+    # Format: <pod_id>-22.proxy.runpod.net  (public cloud)
+    # If the pod has a custom SSH port mapping, adjust accordingly.
+    ssh "root@${pod_id}-22.proxy.runpod.net"
 }
 
 rp-logs() {

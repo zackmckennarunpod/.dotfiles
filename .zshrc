@@ -20,9 +20,10 @@ setopt EXTENDED_HISTORY
 ############################
 export EDITOR='nvim'
 
-# Homebrew (macOS only)
+# Homebrew (macOS only) — cache prefix to avoid subprocess on every shell start
 if [[ -f /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
+  _BREW_PREFIX=/opt/homebrew
 fi
 
 # PNPM
@@ -91,12 +92,23 @@ if command -v zoxide &> /dev/null; then
   eval "$(zoxide init zsh)"
 fi
 
-# NVM — check homebrew path, then standard linux path
-if [[ -f /opt/homebrew/opt/nvm/nvm.sh ]]; then
-  source /opt/homebrew/opt/nvm/nvm.sh
-elif [[ -f "$HOME/.nvm/nvm.sh" ]]; then
-  source "$HOME/.nvm/nvm.sh"
+# NVM — lazy-load to avoid ~200ms startup penalty
+# Calling `nvm`, `node`, or `npm` triggers the real load on first use.
+_NVM_SCRIPT=""
+[[ -f /opt/homebrew/opt/nvm/nvm.sh ]] && _NVM_SCRIPT=/opt/homebrew/opt/nvm/nvm.sh
+[[ -z "$_NVM_SCRIPT" && -f "$HOME/.nvm/nvm.sh" ]] && _NVM_SCRIPT="$HOME/.nvm/nvm.sh"
+
+if [[ -n "$_NVM_SCRIPT" ]]; then
+  _nvm_load() {
+    unfunction nvm node npm npx 2>/dev/null
+    source "$_NVM_SCRIPT"
+  }
+  nvm()  { _nvm_load; nvm "$@" }
+  node() { _nvm_load; node "$@" }
+  npm()  { _nvm_load; npm "$@" }
+  npx()  { _nvm_load; npx "$@" }
 fi
+unset _NVM_SCRIPT
 
 # ASDF
 if [[ -f /opt/homebrew/opt/asdf/libexec/asdf.sh ]]; then
@@ -105,22 +117,18 @@ elif [[ -f "$HOME/.asdf/asdf.sh" ]]; then
   source "$HOME/.asdf/asdf.sh"
 fi
 
-# Zsh syntax highlighting
+# Zsh syntax highlighting — use cached _BREW_PREFIX to avoid subprocess
 _zsh_hl=""
-[[ -f "$(brew --prefix 2>/dev/null)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
-  _zsh_hl="$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[[ -n "$_BREW_PREFIX" && -f "$_BREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
+  _zsh_hl="$_BREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 [[ -z "$_zsh_hl" && -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
   _zsh_hl="/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 [[ -n "$_zsh_hl" ]] && source "$_zsh_hl"
 unset _zsh_hl
 
 ############################
-# Completion
-############################
-autoload -Uz compinit && compinit
-
-############################
 # Oh-My-Zsh (if installed)
+# Note: OMZ calls compinit internally — don't call it again above.
 ############################
 export ZSH="$HOME/.oh-my-zsh"
 if [[ -f $ZSH/oh-my-zsh.sh ]]; then

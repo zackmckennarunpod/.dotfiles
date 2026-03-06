@@ -113,11 +113,11 @@ if $IS_MACOS; then
     fi
 fi
 
-# ── Interactive-only: LazyVim, Beads ─────────────────────────
-if $INTERACTIVE; then
-    section "Neovim (LazyVim)"
-    NVIM_CONFIG_DIR="$HOME/.config/nvim"
-    if [[ ! -d "$NVIM_CONFIG_DIR" ]]; then
+# ── Neovim config ─────────────────────────────────────────────
+section "Neovim"
+NVIM_CONFIG_DIR="$HOME/.config/nvim"
+if [[ ! -d "$NVIM_CONFIG_DIR" ]]; then
+    if $INTERACTIVE; then
         read -p "Install LazyVim starter config? [y/N] " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -126,8 +126,23 @@ if $INTERACTIVE; then
             info "LazyVim installed"
         fi
     else
-        info "Neovim config already exists"
+        # Headless/devpod: install LazyVim non-interactively if nvim is present
+        if command -v nvim &>/dev/null; then
+            info "Installing LazyVim (headless)..."
+            git clone --depth 1 https://github.com/LazyVim/starter "$NVIM_CONFIG_DIR" 2>/dev/null \
+                && rm -rf "$NVIM_CONFIG_DIR/.git" \
+                && info "LazyVim installed — plugins will load on first nvim launch" \
+                || warn "LazyVim clone failed (no network?)"
+        else
+            info "nvim not found, skipping"
+        fi
     fi
+else
+    info "Neovim config already exists"
+fi
+
+# ── Interactive-only: Beads ───────────────────────────────────
+if $INTERACTIVE; then
 
     section "Beads (AI Agent Memory)"
     if ! command -v bd &> /dev/null; then
