@@ -25,13 +25,15 @@
 	process = git-lfs filter-process
 	required = true
 
+# gh credential helper — works wherever gh is installed
+# On devpod, gh auth is set up by entrypoint.sh
 [credential "https://github.com"]
 	helper =
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = !gh auth git-credential
 
 [credential "https://gist.github.com"]
 	helper =
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = !gh auth git-credential
 
 # Include local overrides (create ~/.gitconfig.local for personal settings)
 [include]

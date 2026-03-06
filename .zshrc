@@ -1,6 +1,7 @@
 ############################
 # Zsh Configuration
-# Generalized dotfiles - add personal overrides to ~/.zshrc.local
+# Works on macOS + Linux devpods
+# Personal overrides: ~/.zshrc.local
 ############################
 
 ############################
@@ -17,10 +18,9 @@ setopt EXTENDED_HISTORY
 ############################
 # Environment
 ############################
-export ZSH="$HOME/.oh-my-zsh"
 export EDITOR='nvim'
 
-# Homebrew (macOS)
+# Homebrew (macOS only)
 if [[ -f /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
@@ -37,6 +37,9 @@ export BUN_INSTALL="$HOME/.bun"
 [[ -d "$HOME/scripts" ]] && export PATH="$HOME/scripts:$PATH"
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
 
+# DevPod secrets (written by entrypoint.sh on pod boot)
+[[ -f ~/.devbox-env ]] && source ~/.devbox-env
+
 ############################
 # Navigation
 ############################
@@ -50,9 +53,9 @@ alias x='exit'
 # Editor
 ############################
 alias nv="nvim"
-alias zshconfig='nvim ~/.zshrc'
-alias sshconfig='nvim ~/.ssh/config'
-alias gitconfig='nvim ~/.gitconfig'
+alias zshconfig='${EDITOR} ~/.zshrc'
+alias sshconfig='${EDITOR} ~/.ssh/config'
+alias gitconfig='${EDITOR} ~/.gitconfig'
 alias sc='source ~/.zshrc'
 
 ############################
@@ -72,10 +75,6 @@ alias gpull='git pull'
 ############################
 alias rnm='rm -rf node_modules'
 alias ip='ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk "{print \$1}"'
-
-# Fix grep alias conflicts
-unset -f grep 2>/dev/null
-unalias grep 2>/dev/null
 alias grep='grep --color=auto'
 
 ############################
@@ -92,22 +91,28 @@ if command -v zoxide &> /dev/null; then
   eval "$(zoxide init zsh)"
 fi
 
-# NVM (if installed via homebrew)
+# NVM — check homebrew path, then standard linux path
 if [[ -f /opt/homebrew/opt/nvm/nvm.sh ]]; then
   source /opt/homebrew/opt/nvm/nvm.sh
-  [[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
+elif [[ -f "$HOME/.nvm/nvm.sh" ]]; then
+  source "$HOME/.nvm/nvm.sh"
 fi
 
-# ASDF (if installed)
+# ASDF
 if [[ -f /opt/homebrew/opt/asdf/libexec/asdf.sh ]]; then
   source /opt/homebrew/opt/asdf/libexec/asdf.sh
-  fpath=(${ASDF_DIR}/completions $fpath)
+elif [[ -f "$HOME/.asdf/asdf.sh" ]]; then
+  source "$HOME/.asdf/asdf.sh"
 fi
 
-# Zsh syntax highlighting (if installed)
-if [[ -f $(brew --prefix 2>/dev/null)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
-  source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
+# Zsh syntax highlighting
+_zsh_hl=""
+[[ -f "$(brew --prefix 2>/dev/null)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
+  _zsh_hl="$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[[ -z "$_zsh_hl" && -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
+  _zsh_hl="/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[[ -n "$_zsh_hl" ]] && source "$_zsh_hl"
+unset _zsh_hl
 
 ############################
 # Completion
@@ -115,8 +120,9 @@ fi
 autoload -Uz compinit && compinit
 
 ############################
-# Oh-My-Zsh
+# Oh-My-Zsh (if installed)
 ############################
+export ZSH="$HOME/.oh-my-zsh"
 if [[ -f $ZSH/oh-my-zsh.sh ]]; then
   source $ZSH/oh-my-zsh.sh
 fi
@@ -126,6 +132,8 @@ fi
 ############################
 if [[ -f /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme ]]; then
   source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+elif [[ -f /usr/share/powerlevel10k/powerlevel10k.zsh-theme ]]; then
+  source /usr/share/powerlevel10k/powerlevel10k.zsh-theme
 fi
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
@@ -145,6 +153,9 @@ fi
 # Open repo in neovim with tmux session
 nvimrepo() {
   local BASE_DIR="${REPO_BASE_DIR:-$HOME/Developer}"
+  # On devpod, repos live in ~/repos
+  [[ ! -d "$BASE_DIR" && -d "$HOME/repos" ]] && BASE_DIR="$HOME/repos"
+
   local REPO_NAME="$1"
   local REPO_PATH=""
 
@@ -202,6 +213,11 @@ findLambda() {
 findQueue() {
   aws sqs list-queues --query 'QueueUrls' --output text | tr '\t' '\n' | grep "$1"
 }
+
+############################
+# Runpod helpers (auto-load in devpod or if sourced explicitly)
+############################
+[[ -f ~/.dotfiles/extras/runpod-helpers.sh ]] && source ~/.dotfiles/extras/runpod-helpers.sh
 
 ############################
 # Local Overrides
